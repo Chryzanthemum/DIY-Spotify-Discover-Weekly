@@ -1,3 +1,4 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
 import spotipy
@@ -5,7 +6,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from annoy import AnnoyIndex
 from utils import get_features
 from datetime import datetime
-
+import time
 
 def create_playlist(songs):
     user_id = sp.me()['id']
@@ -55,17 +56,36 @@ def get_nn(t, sp, songs):
     # for each song in songs, we get a few close songs. Return all of them?
     return df_nearest_neighbors_indices
 
-def apply_filtering_criteria(songs_df):
+def apply_filtering_criteria(songs_df, randomness):
     # stick a bunch of rules on there to get us to 30 songs
     # right now let's just take top 30
-    return songs_df.sort_values(by='distance', ascending=False).head(30)[['song_index']]
-    
+    songs_df = (
+        songs_df[songs_df['distance']>0]
+    )
+    songs_df['randomness'] = np.random.randint(100,101 + randomness,size=(len(songs_df), 1))/100
+    songs_df['modified_distance'] = songs_df['randomness'] * songs_df['distance']
+    return songs_df.sort_values(by='modified_distance', ascending=False).head(30)[['song_index']]
+
+def looper(df_nearest_neighbors_indices, df_metadata, my_table, randomness):
+    df_filtered_indices = apply_filtering_criteria(df_nearest_neighbors_indices, randomness)
+    df_metadata2 = df_metadata.iloc[list(df_filtered_indices['song_index']), :]
+    display = df_metadata2[['song_name', 'album_name']]
+    my_table.dataframe(display)
+    songs = list(df_metadata2['song_id'])    
+    st.session_state.songs = songs
+    #return songs
+        
 # ENV - VARIABLES
 scope = ['user-library-read', "playlist-modify-public"]
 cid ='0deb154cdea34cfa9c50fc76938403b9'
 secret = '6aa3c3ee390d4421bdc6a860cf33c686'
 index = AnnoyIndex(11, 'angular')
 index.load('data/index.ann')
+st.session_state.songs = []
+st.write("Welcome to Chryzanthemum's DIY Discover Weekly!")
+time.sleep(0.5)
+st.write("The goal of this project is to envision a world in which humans guide the outputs of algorithms - a synthesis of man and machine. And also maybe find some cool new music.")
+randomness = st.slider('How much variance do you want in your suggestions? This input affects the baseline randomness.', 0.0, 100.0, 50.0)
 
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id = cid,
                                                client_secret = secret,
@@ -73,12 +93,22 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(client_id = cid,
                                                scope=scope,
                                               open_browser=True))
 
-# Okay, right now this doesn't have to be a df instead of a list, but I promise there will be some use case for this
+df_metadata = pd.read_csv('data/metadata.csv')
 df_your_songs = pd.DataFrame(recurse_saved_songs(sp, list()))
-df_nearest_neighbors_indices = get_nn(index, sp, df_your_songs.head()['id'])
-df_filtered_indices = apply_filtering_criteria(df_nearest_neighbors_indices)
-df_metadata = pd.read_csv('data/metadata.csv').iloc[list(df_filtered_indices['song_index']), :]
+df_nearest_neighbors_indices = get_nn(index, sp, df_your_songs['id'])
+my_table = st.empty()
+st.session_state.didMakePlaylist = False
+st.write(st.session_state.songs)
+if not st.session_state.didMakePlaylist:
+  if st.button('Add these songs to a custom Spotify Playlist?'):
+    create_playlist(st.session_state.songs)
+    st.session_state.didMakePlayList = True
 
-for name in df_metadata['song_name']:
-    print(name)
-songs = list(df_metadata['song_id'])
+# if st.button('Add these songs to a custom Spotify Playlist?'):
+#     create_playlist(st.session_state.songs)
+if st.button('Get a new Playlist'):
+    #songs = looper(df_nearest_neighbors_indices, df_metadata, my_table, randomness)
+    looper(df_nearest_neighbors_indices, df_metadata, my_table, randomness)
+
+#songs = looper(df_nearest_neighbors_indices, df_metadata, my_table, randomness)
+looper(df_nearest_neighbors_indices, df_metadata, my_table, randomness)
