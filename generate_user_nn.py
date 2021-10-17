@@ -82,8 +82,8 @@ def looper(df_nearest_neighbors_indices, df_metadata, my_table, randomness):
 
 # ENV - VARIABLES
 scope = ['user-library-read', "playlist-modify-public"]
-cid ='0deb154cdea34cfa9c50fc76938403b9'
-secret = '6aa3c3ee390d4421bdc6a860cf33c686'
+cid = st.secrets["cid"]
+secret = st.secrets["secret"]
 index = AnnoyIndex(11, 'angular')
 index.load('data/index.ann')
 st.write("Welcome to Chryzanthemum's DIY Discover Weekly!")

@@ -17,8 +17,8 @@ def build_annoy_index(array, trees=10):
     return t
 
 # ENV VARIABLE
-cid ='0deb154cdea34cfa9c50fc76938403b9'
-secret = '6aa3c3ee390d4421bdc6a860cf33c686'
+cid = st.secrets["cid"]
+secret = st.secrets["secret"]
 username = 'Ben'
 credentials = SpotifyClientCredentials(
         client_id=cid,
