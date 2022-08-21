@@ -82,8 +82,9 @@ def looper(df_nearest_neighbors_indices, df_metadata, my_table, randomness):
 
 # ENV - VARIABLES
 scope = ['user-library-read', "playlist-modify-public"]
-cid = st.secrets["cid"]
-secret = st.secrets["secret"]
+cid ="0deb154cdea34cfa9c50fc76938403b9" 
+secret = "6aa3c3ee390d4421bdc6a860cf33c686"
+username = "Ben"
 index = AnnoyIndex(11, 'angular')
 index.load('data/index.ann')
 st.write("Welcome to Chryzanthemum's DIY Discover Weekly!")
@@ -108,10 +109,10 @@ if 'songs' not in st.session_state:
     looper(df_nearest_neighbors_indices, df_metadata, my_table, randomness)
 display_song_info(my_table, df_metadata, st.session_state.songs)
 if not st.session_state.didMakePlaylist:
-  if st.button('Add these songs to a custom Spotify Playlist?'):
-    create_playlist(st.session_state.songs)
-    st.session_state.didMakePlayList = True
-    st.write('Playlist generating! Check your Spotify')
+    if st.button('Add these songs to a custom Spotify Playlist?'):
+        create_playlist(st.session_state.songs)
+        st.session_state.didMakePlayList = True
+        st.write('Playlist generating! Check your Spotify')
 
 if st.button('Get a new Playlist'):
     looper(df_nearest_neighbors_indices, df_metadata, my_table, randomness)
